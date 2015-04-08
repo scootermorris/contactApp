@@ -91,9 +91,9 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 		CyNetwork componentNetwork = (CyNetwork)getValueAt(row, 0);
 		renderer.clearImage(componentNetwork);
 		componentColors.set(row, color);
+		setValueAt(color, row, 1);
 		setValueAt(componentNetwork, row, 0);
 		colorRIN(componentNetwork, networkView, color);
-		setValueAt(color, row, 1);
 		fireTableRowsInserted(row, row);
 		networkBrowser.updateTable();
 	}

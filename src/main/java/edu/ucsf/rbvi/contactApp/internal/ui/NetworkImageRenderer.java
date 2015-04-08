@@ -50,7 +50,6 @@ public class NetworkImageRenderer implements TableCellRenderer {
 	static final long serialVersionUID = 1L;
 	final ContactManager contactManager;
 	private final Map<CyNetwork, ImageIcon> imageMap = new HashMap<>();
-	private final DefaultTableCellRenderer adaptee = new DefaultTableCellRenderer();
 	private final int graphPicSize;
 
 	// Services we'll need
@@ -79,8 +78,6 @@ public class NetworkImageRenderer implements TableCellRenderer {
 																								 int viewRow, int viewColumn) {
 		ContactBrowserTableModel tableModel = (ContactBrowserTableModel)table.getModel();
 		CyNetwork net = (CyNetwork)network;
-
-		adaptee.getTableCellRendererComponent(table, network, isSelected, hasFocus, viewRow, viewColumn);
 
 		if (!imageMap.containsKey(net)) {
 			// generate the image
