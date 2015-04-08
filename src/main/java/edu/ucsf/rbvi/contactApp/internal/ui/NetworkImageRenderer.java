@@ -78,10 +78,13 @@ public class NetworkImageRenderer implements TableCellRenderer {
 																								 int viewRow, int viewColumn) {
 		ContactBrowserTableModel tableModel = (ContactBrowserTableModel)table.getModel();
 		CyNetwork net = (CyNetwork)network;
+		// System.out.println("Rendering network for row "+viewRow);
 
 		if (!imageMap.containsKey(net)) {
+			// System.out.println("Redrawing image for row "+viewRow);
 			// generate the image
 			Color color = (Color) tableModel.getValueAt(viewRow, 1);
+			// System.out.println("Color for row "+viewRow+" is "+color);
 			Image image = createNetworkImage(net, color, graphPicSize, graphPicSize, layouter, true);
 			ImageIcon icon = new ImageIcon(image);
 			imageMap.put(net, icon);

@@ -82,7 +82,9 @@ public class ColorButtonEditor extends AbstractCellEditor implements TableCellEd
 	}
 
 	protected void fireEditingStopped() {
-		super.fireEditingStopped();
+		try {
+			super.fireEditingStopped();
+		} catch (IndexOutOfBoundsException e) {}
 	}
 
 }

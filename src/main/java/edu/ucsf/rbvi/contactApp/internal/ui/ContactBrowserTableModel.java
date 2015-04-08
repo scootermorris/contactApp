@@ -87,11 +87,14 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 	}
 
 	public void changeColor(int row, Color color) {
+		// System.out.println("Changing color for row "+row+" to "+color);
 		NetworkImageRenderer renderer = networkBrowser.getImageRenderer();
 		CyNetwork componentNetwork = (CyNetwork)getValueAt(row, 0);
 		renderer.clearImage(componentNetwork);
 		componentColors.set(row, color);
+		// System.out.println("Setting color for row "+row);
 		setValueAt(color, row, 1);
+		// System.out.println("Redrawing network for row "+row);
 		setValueAt(componentNetwork, row, 0);
 		colorRIN(componentNetwork, networkView, color);
 		fireTableRowsInserted(row, row);
