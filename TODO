@@ -1,0 +1,5 @@
+TODO:
+	o Fix RINAlyzer's apply visual properties
+	o Add Contact Network edges
+	o Figure out algorithm to maintain consistency in contact networks across Tstress levels
+

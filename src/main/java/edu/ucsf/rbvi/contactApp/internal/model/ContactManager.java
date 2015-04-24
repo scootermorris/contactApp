@@ -1,5 +1,6 @@
 package edu.ucsf.rbvi.contactApp.internal.model;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -17,21 +18,30 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.command.CommandExecutorTaskFactory;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.work.FinishStatus;
+import org.cytoscape.work.ObservableTask;
+import org.cytoscape.work.SynchronousTaskManager;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskObserver;
 
 import edu.ucsf.rbvi.contactApp.internal.ui.ContactPanel;
 
-public class ContactManager {
+public class ContactManager implements TaskObserver {
 	final CyServiceRegistrar serviceRegistrar;
 	CyNetworkFactory networkFactory = null;
 	CyNetworkManager networkManager = null;
+	SynchronousTaskManager taskManager = null;
+	CommandExecutorTaskFactory commandTaskFactory = null;
 	Map<Double, ContactNetwork> contactNetworkMap;
 	File contactFile = null;
 	ContactPanel contactPanel = null;
+	int modelNumber = -1;
 
 	// A couple of useful services that we want to cache
 	CyApplicationManager cyAppManager = null;
@@ -115,6 +125,90 @@ public class ContactManager {
 		return contactNetworkMap.size();
 	}
 
+	public void loadPDBFile(File pdbFile) {
+		getTaskServices();
+
+		Map<String, Object> args = new HashMap<>();
+		args.put("structureFile", pdbFile.getPath());
+		TaskIterator ti = commandTaskFactory.createTaskIterator("structureViz", "open", args, this);
+		taskManager.execute(ti);
+
+		// Now bring up the dialog
+		args = new HashMap<>();
+		ti = commandTaskFactory.createTaskIterator("structureViz", "showDialog", args, null);
+		taskManager.execute(ti);
+	}
+
+	public void createRIN() {
+		getTaskServices();
+
+		// First, select the model
+		Map<String, Object> args = new HashMap<>();
+		args.put("command", "sel #"+modelNumber);
+		TaskIterator ti = commandTaskFactory.createTaskIterator("structureViz", "send", args, null);
+		taskManager.execute(ti);
+
+		try {
+			// Wait for things to process
+			Thread.sleep(500);
+		} catch (Exception e) {}
+
+		args = new HashMap<>();
+		ti = commandTaskFactory.createTaskIterator("structureViz", "createRIN", args, null);
+		taskManager.execute(ti);
+	}
+
+	public void hideSideChain() {
+		getTaskServices();
+
+		Map<String, Object> args = new HashMap<>();
+		args.put("command", "~show sel");
+		TaskIterator ti = commandTaskFactory.createTaskIterator("structureViz", "send", args, null);
+		taskManager.execute(ti);
+	}
+
+	public void showSideChain(List<Integer> residues) {
+		getTaskServices();
+
+		String residue = "#"+modelNumber+":";
+		for (Integer residueID: residues)
+			residue += ""+residueID+",";
+
+		residue = residue.substring(0, residue.length()-1);
+
+		Map<String, Object> args = new HashMap<>();
+		String command = "show "+residue+"; repr bs "+residue;
+		// System.out.println("Sending command: '"+command+"'");
+		args.put("command", command);
+		TaskIterator ti = commandTaskFactory.createTaskIterator("structureViz", "send", args, null);
+		taskManager.execute(ti);
+
+		// args = new HashMap<>();
+		// args.put("command", "repr sphere sel");
+		// ti = commandTaskFactory.createTaskIterator("structureViz", "send", args, null);
+		// taskManager.execute(ti);
+	}
+
+	public void syncColors() {
+		getTaskServices();
+		Map<String, Object> args = new HashMap<>();
+		args.put("chimeraToCytoscape", "false");
+		args.put("cytoscapeToChimera", "true");
+		TaskIterator ti = commandTaskFactory.createTaskIterator("structureViz", "syncColors", args, null);
+		taskManager.execute(ti);
+	}
+
+	public void taskFinished(ObservableTask task) {
+		String models = task.getResults(String.class);
+		String model = models.substring(1, models.indexOf(' '));
+
+		try {
+			modelNumber = Integer.parseInt(model);
+		} catch (Exception e) {}
+	}
+
+	public void allFinished(FinishStatus finishStatus) {}
+
 	public void createNetworks(boolean register) {
 		if (networkManager == null)
 			networkManager = getService(CyNetworkManager.class);
@@ -122,11 +216,13 @@ public class ContactManager {
 		for (Double stress: contactNetworkMap.keySet()) {
 			ContactNetwork cn = contactNetworkMap.get(stress);
 			CyNetwork net = cn.getNetwork();
-			System.out.println("Got network for Tstress: "+cn.getStress());
-			System.out.println("...network has "+net.getNodeCount()+" nodes and "+net.getEdgeCount()+" edges");
 			if (register && net != null)
 				networkManager.addNetwork(net);
 		}
+	}
+
+	public int getCurrentModel() {
+		return modelNumber;
 	}
 
 	public CyNetwork getCurrentNetwork() {
@@ -157,6 +253,23 @@ public class ContactManager {
 
 	public void unregisterService(Object service, Class<?> serviceClass) {
 		serviceRegistrar.unregisterService(service, serviceClass);
+	}
+
+	private void getTaskServices() {
+		if (taskManager == null) {
+			taskManager = getService(SynchronousTaskManager.class);
+		}
+		if (commandTaskFactory == null) {
+			commandTaskFactory = getService(CommandExecutorTaskFactory.class);
+		}
+	}
+
+	private String chimeraColor(Color color) {
+		double r = (double)color.getRed()/255.0;
+		double g = (double)color.getGreen()/255.0;
+		double b = (double)color.getBlue()/255.0;
+		double a = (double)color.getAlpha()/255.0;
+		return ""+r+","+g+","+b+","+a;
 	}
 
 

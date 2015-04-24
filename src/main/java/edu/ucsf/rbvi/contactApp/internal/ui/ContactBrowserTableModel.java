@@ -62,6 +62,11 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 	}
 
 	public void updateData(double tStress) {
+		// First, reset all of the RIN nodes to grey
+		for (View<CyNode> nv: networkView.getNodeViews())
+			nv.setVisualProperty(NODE_FILL_COLOR, Color.GRAY);
+
+		// Now handle all of our component networks
 		ContactNetwork contactNetwork = contactManager.getContactNetwork(tStress);
 		componentNetworks = contactNetwork.getNetworkComponents();
 		Collections.sort(componentNetworks, new NetworkSorter());
@@ -70,10 +75,12 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 		this.data = new Object[componentNetworks.size()][columnNames.length];
 
 		for (int i = 0; i < componentNetworks.size(); i++) {
+			// Default grey
+			Color color = new Color(192,192,192,128);
 			CyNetwork componentNetwork = componentNetworks.get(i);
-			Color color = componentColors.get(i);
+			if (componentNetwork.getNodeCount() > 2)
+				color = componentColors.get(i);
 
-			// setValueAt(updateNetworkImage(componentNetwork, color), i, 0);
 			setValueAt(componentNetwork, i, 0);
 
 			setValueAt(color, i, 1);
@@ -84,6 +91,7 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 		fireTableDataChanged();
 		networkView.updateView();
 		networkBrowser.updateTable();
+		contactManager.syncColors();
 	}
 
 	public void changeColor(int row, Color color) {
@@ -102,6 +110,7 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 	}
 
 	public void colorRIN(CyNetwork componentNetwork, CyNetworkView RINNetworkView, Color color) {
+		// Now color according to the pathway
 		for (CyNode cNode: componentNetwork.getNodeList()) {
 			Integer resId = new Integer(componentNetwork.getRow(cNode).get("ResidueNumber", Integer.class));
 			if (residueMap.containsKey(resId)) {
@@ -111,6 +120,8 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 				nv.setVisualProperty(NODE_FILL_COLOR, color);
 			}
 		}
+
+		// Add edges to highlight pathway????
 	}
 
 	@Override
@@ -154,16 +165,19 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 		return false;
 	}
 
-	public void selectFromRow(int modelRow) {
+	public List<Integer> selectFromRow(int modelRow) {
 		CyNetwork net = (CyNetwork)getValueAt(modelRow, 0);
+		List<Integer> residueList = new ArrayList<>();
 
 		for (CyNode cNode: net.getNodeList()) {
 			Integer resId = new Integer(net.getRow(cNode).get("ResidueNumber", Integer.class));
 			if (residueMap.containsKey(resId)) {
 				CyNode targetNode = residueMap.get(resId);
 				network.getRow(targetNode).set(CyNetwork.SELECTED, true);
+				residueList.add(resId);
 			}
 		}
+		return residueList;
 	}
 
 	private List<Color> generateColors(int number) {

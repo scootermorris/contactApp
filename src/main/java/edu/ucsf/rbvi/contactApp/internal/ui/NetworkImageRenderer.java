@@ -43,6 +43,8 @@ import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualPropertyDependency;
 import org.cytoscape.view.vizmap.VisualStyle;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
+import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
+import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 
 import edu.ucsf.rbvi.contactApp.internal.model.ContactManager;
 
@@ -242,6 +244,18 @@ public class NetworkImageRenderer implements TableCellRenderer {
 			componentStyle.setDefaultValue(EDGE_STROKE_SELECTED_PAINT, Color.BLUE);
 			componentStyle.setDefaultValue(EDGE_TARGET_ARROW_SHAPE, NONE);
 			componentStyle.setDefaultValue(EDGE_SOURCE_ARROW_SHAPE, NONE);
+
+			// Scale the edge width based on the number of pathways (edge row Count)
+			// Get a function factory
+			VisualMappingFunctionFactory vmff = contactManager.getService(VisualMappingFunctionFactory.class,
+			                                                              "(mapping.type=continuous)");
+			ContinuousMapping edgeMapping =
+				(ContinuousMapping) vmff.createVisualMappingFunction("Count", Integer.class, EDGE_WIDTH);
+
+			edgeMapping.addPoint(1, new BoundaryRangeValues(1, 1, 1));
+			edgeMapping.addPoint(10, new BoundaryRangeValues(20, 20, 20));
+			componentStyle.addVisualMappingFunction(edgeMapping);
+
 
 			/*
 			//System.out.println("GCS: before getVisual Lexicon");

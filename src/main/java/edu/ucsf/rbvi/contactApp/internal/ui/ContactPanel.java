@@ -75,6 +75,7 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 		contactNetworkBrowser = new ContactNetworkBrowser(this, contactManager);
 		add(contactNetworkBrowser, BorderLayout.CENTER);
 		this.setSize(this.getMinimumSize());
+
 	}
 
 	public Component getComponent() {
@@ -111,7 +112,7 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 		private final JTable table;
 		private final JScrollPane tableScrollPane;
 		private JLabel tableLabel;
-		private final JSlider slider;
+		private JSlider slider = null;
 		private final ContactPanel contactPanel;
 		private final ContactManager contactManager;
 		private double tStress = 0.25;
@@ -133,23 +134,28 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 			Collections.sort(stresses);
 			minStress = (int)(stresses.get(0)*100.0);
 			maxStress = (int)(stresses.get(stresses.size()-1)*100.0);
+			tStress = stresses.get(0);
 
-			JPanel sliderPanel = new JPanel(new BorderLayout());
-			JLabel sliderLabel = new JLabel("<html><b>&nbsp;&nbsp;T<sub>stress</sub></b>&nbsp;&nbsp;</html>");
-			sliderPanel.add(sliderLabel, BorderLayout.WEST);
+			// Only create the slider panel if we have more than one
+			// stress value
+			if (minStress < maxStress) {
+				JPanel sliderPanel = new JPanel(new BorderLayout());
+				JLabel sliderLabel = new JLabel("<html><b>&nbsp;&nbsp;T<sub>stress</sub></b>&nbsp;&nbsp;</html>");
+				sliderPanel.add(sliderLabel, BorderLayout.WEST);
 
-			slider = new JSlider(minStress, maxStress, (int)(tStress*100.0));
-			slider.setLabelTable(generateLabels(stresses));
-			slider.setPaintLabels(true);
-			slider.addChangeListener(this);
-			sliderPanel.add(slider, BorderLayout.CENTER);
+				slider = new JSlider(minStress, maxStress, (int)(tStress*100.0));
+				slider.setLabelTable(generateLabels(stresses));
+				slider.setPaintLabels(true);
+				slider.addChangeListener(this);
+				sliderPanel.add(slider, BorderLayout.CENTER);
 			
 			// Put a border around our sliderPanel
-			Border outer = BorderFactory.createEtchedBorder();
-			Border inner = BorderFactory.createEmptyBorder(10,10,10,10);
-			Border compound = BorderFactory.createCompoundBorder(outer, inner);
-			sliderPanel.setBorder(compound);
-			add(sliderPanel, BorderLayout.NORTH);
+				Border outer = BorderFactory.createEtchedBorder();
+				Border inner = BorderFactory.createEmptyBorder(10,10,10,10);
+				Border compound = BorderFactory.createCompoundBorder(outer, inner);
+				sliderPanel.setBorder(compound);
+				add(sliderPanel, BorderLayout.NORTH);
+			}
 
 			// Create a new JPanel for the table
 			JPanel tablePanel = new JPanel(new BorderLayout());
@@ -203,17 +209,22 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 		}
 
 		public void valueChanged(ListSelectionEvent e) {
+			if (e.getValueIsAdjusting()) return;
+			contactManager.hideSideChain();
 			int[] rows = table.getSelectedRows(); // Get all of the selected rows
 
 			// Clear the current selection
 			for (CyNode node: network.getNodeList())
 				network.getRow(node).set(CyNetwork.SELECTED, false);
 
+			List<Integer> residues = new ArrayList<>();
 			for (int viewRow: rows) {
 				int modelRow = table.convertRowIndexToModel(viewRow);
-				tableModel.selectFromRow(modelRow);
+				residues.addAll(tableModel.selectFromRow(modelRow));
 			}
 			networkView.updateView();
+			if (residues.size() > 0)
+				contactManager.showSideChain(residues);
 		}
 
 		public void stateChanged(ChangeEvent e) {

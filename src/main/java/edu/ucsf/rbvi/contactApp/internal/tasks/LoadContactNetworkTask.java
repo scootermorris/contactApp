@@ -16,10 +16,8 @@ public class LoadContactNetworkTask extends AbstractTask {
 	@Tunable(description="File containing contact network", params="input=true")
 	public File contactFile;
 
-	/*
-	@Tunable(description="File containing PDB data")
-	public File pdbFile;
-	*/
+	@Tunable(description="File containing the PDB structure", params="input=true")
+	public File pdbFile = null;
 
 	/**
 	 * Constructor for loading CDD Domain from the CDD website.
@@ -37,6 +35,15 @@ public class LoadContactNetworkTask extends AbstractTask {
 	@Override
 	public void run(TaskMonitor monitor) throws Exception {
 		monitor.setTitle("Load Contact Network");
+
+		if (pdbFile != null) {
+			// Load the PDB structure
+			monitor.setStatusMessage("Loading PDB structure into UCSF Chimera");
+			contactManager.loadPDBFile(pdbFile);
+
+			monitor.setStatusMessage("Creating RIN network in Cytoscape");
+			contactManager.createRIN();
+		}
 
 		// Load the contact network
 		int networks = contactManager.loadContactNetwork(contactFile);
