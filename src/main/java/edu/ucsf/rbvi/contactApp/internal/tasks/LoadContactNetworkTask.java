@@ -2,13 +2,18 @@ package edu.ucsf.rbvi.contactApp.internal.tasks;
 
 import java.io.File;
 
+import org.cytoscape.application.swing.CytoPanelComponent;
+import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.ProvidesTitle;
+import org.cytoscape.work.SynchronousTaskManager;
+import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.Tunable;
 import org.cytoscape.work.util.ListSingleSelection;
 
 import edu.ucsf.rbvi.contactApp.internal.model.ContactManager;
+import edu.ucsf.rbvi.contactApp.internal.ui.ContactPanel;
 
 public class LoadContactNetworkTask extends AbstractTask {
 	final ContactManager contactManager;
@@ -36,6 +41,24 @@ public class LoadContactNetworkTask extends AbstractTask {
 	public void run(TaskMonitor monitor) throws Exception {
 		monitor.setTitle("Load Contact Network");
 
+		if (contactManager.getNetworkCount() > 0) {
+			monitor.setStatusMessage("Clearing previous contact network load");
+
+			// Close the open structure
+			contactManager.closeChimeraStructure();
+
+			// Hide the panel
+			ContactPanel contactPanel = contactManager.getResultsPanel();
+			if (contactPanel != null)
+				contactManager.unregisterService(contactPanel, CytoPanelComponent.class);
+
+			// Delete the network
+			contactManager.getService(CyNetworkManager.class).destroyNetwork(contactManager.getCurrentNetwork());
+			
+			// Clear the manager
+			contactManager.reset();
+		}
+
 		if (pdbFile != null) {
 			// Load the PDB structure
 			monitor.setStatusMessage("Loading PDB structure into UCSF Chimera");
@@ -48,7 +71,17 @@ public class LoadContactNetworkTask extends AbstractTask {
 		// Load the contact network
 		int networks = contactManager.loadContactNetwork(contactFile);
 		monitor.setStatusMessage("Loaded "+networks+" contact networks");
-		insertTasksAfterCurrentTask(new ShowContactNetworksPanelTask(contactManager, false), 
-		                            new ShowContactNetworksPanelTask(contactManager, true));
+
+		SynchronousTaskManager tm = contactManager.getService(SynchronousTaskManager.class);
+
+		// Unregister the results panel
+		TaskIterator ti = new TaskIterator(new ShowContactNetworksPanelTask(contactManager, false));
+		tm.execute(ti);
+
+		// Show the results panel
+		ti = new TaskIterator(new ShowContactNetworksPanelTask(contactManager, true));
+		tm.execute(ti);
+
+		contactManager.getResultsPanel().updateData();
 	}
 }

@@ -32,6 +32,7 @@ public class ColorButtonRenderer extends JButton implements TableCellRenderer {
 	public Component getTableCellRendererComponent(JTable table, Object color,
 	                                               boolean isSelected, boolean hasFocus,
 																								 int row, int column) {
+		// System.out.println("Color button renderer for row: "+row+" = "+color);
 		frame = new JPanel();
 		frame.setLayout(new BoxLayout(frame, BoxLayout.Y_AXIS));
 		Box box = new Box(BoxLayout.Y_AXIS);

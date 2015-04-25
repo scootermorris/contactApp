@@ -17,10 +17,15 @@ import java.util.Map;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 
+import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
+import static org.cytoscape.view.presentation.property.BasicVisualLexicon.EDGE_PAINT;
+import static org.cytoscape.view.presentation.property.BasicVisualLexicon.EDGE_VISIBLE;
+import static org.cytoscape.view.presentation.property.BasicVisualLexicon.EDGE_WIDTH;
 import static org.cytoscape.view.presentation.property.BasicVisualLexicon.NODE_FILL_COLOR;
 import org.cytoscape.work.TaskMonitor;
 
@@ -95,7 +100,6 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 	}
 
 	public void changeColor(int row, Color color) {
-		// System.out.println("Changing color for row "+row+" to "+color);
 		NetworkImageRenderer renderer = networkBrowser.getImageRenderer();
 		CyNetwork componentNetwork = (CyNetwork)getValueAt(row, 0);
 		renderer.clearImage(componentNetwork);
@@ -105,8 +109,9 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 		// System.out.println("Redrawing network for row "+row);
 		setValueAt(componentNetwork, row, 0);
 		colorRIN(componentNetwork, networkView, color);
-		fireTableRowsInserted(row, row);
+		// fireTableRowsInserted(row, row);
 		networkBrowser.updateTable();
+		contactManager.syncColors();
 	}
 
 	public void colorRIN(CyNetwork componentNetwork, CyNetworkView RINNetworkView, Color color) {
@@ -120,8 +125,6 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 				nv.setVisualProperty(NODE_FILL_COLOR, color);
 			}
 		}
-
-		// Add edges to highlight pathway????
 	}
 
 	@Override
@@ -178,6 +181,92 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 			}
 		}
 		return residueList;
+	}
+
+	public List<CyEdge> selectEdgesFromRow(int modelRow) {
+		CyNetwork net = (CyNetwork)getValueAt(modelRow, 0);
+		List<CyEdge> edgeList = new ArrayList<>();
+
+		for (CyEdge cEdge: net.getEdgeList()) {
+			CyNode source = cEdge.getSource();
+			CyNode target = cEdge.getTarget();
+			Integer sourceResId = new Integer(net.getRow(source).get("ResidueNumber", Integer.class));
+			Integer targetResId = new Integer(net.getRow(target).get("ResidueNumber", Integer.class));
+			int count = net.getRow(cEdge).get("PathwayCount", Integer.class);
+			if (residueMap.containsKey(sourceResId) && residueMap.containsKey(targetResId)) {
+				CyNode sourceNode = residueMap.get(sourceResId);
+				CyNode targetNode = residueMap.get(targetResId);
+				edgeList.add(addEdgeIfNecessary(sourceNode, targetNode, count));
+			}
+		}
+		return edgeList;
+	}
+
+	public void clearPathwayEdges() {
+		for (CyEdge edge: network.getEdgeList()) {
+			if (network.getRow(edge).get(CyEdge.INTERACTION, String.class).equals("ContactPathway"))
+				networkView.getEdgeView(edge).setLockedValue(EDGE_VISIBLE, false);
+		}
+	}
+
+	public void styleEdges(List<CyEdge> edges, int modelRow) {
+		Color color = (Color) getValueAt(modelRow, 1);
+
+		int max = -1;
+
+		// First pass -- calculate min/max
+		for (CyEdge edge: edges) {
+			int width = network.getRow(edge).get("PathwayCount", Integer.class);
+			if (width > max)
+				max = width;
+		}
+
+		double factor = 1.0;
+		if (max > 50)
+			factor = 5.0;
+		else if (max > 40)
+			factor = 4.0;
+		else if (max > 30)
+			factor = 3.0;
+		else if (max > 20)
+			factor = 2.0;
+
+		for (CyEdge edge: edges) {
+			int width = network.getRow(edge).get("PathwayCount", Integer.class);
+			View<CyEdge> edgeView = networkView.getEdgeView(edge);
+			if (edgeView == null) continue;
+
+			// We need to use a locked property because RINalyzer has a discrete mapping
+			// for edge color
+			edgeView.setLockedValue(EDGE_PAINT, color);
+			edgeView.setLockedValue(EDGE_WIDTH, (double)width/factor);
+		}
+	}
+
+	private CyEdge addEdgeIfNecessary(CyNode source, CyNode target, int count) {
+		CyTable edgeTable = network.getDefaultEdgeTable();
+		if (edgeTable.getColumn("PathwayCount") == null)
+			edgeTable.createColumn("PathwayCount", Integer.class, false);
+
+		if (edgeTable.getColumn(CyEdge.INTERACTION) == null)
+			edgeTable.createColumn(CyEdge.INTERACTION, String.class, false);
+
+		CyEdge pathwayEdge = null;
+		if (network.containsEdge(source, target)) {
+			for (CyEdge edge: network.getConnectingEdgeList(source, target, CyEdge.Type.DIRECTED)) {
+				if (network.getRow(edge).get(CyEdge.INTERACTION, String.class).equals("ContactPathway")) {
+					pathwayEdge = edge;
+					networkView.getEdgeView(pathwayEdge).clearValueLock(EDGE_VISIBLE);
+					break;
+				}
+			}
+		}
+		if (pathwayEdge == null) {
+			pathwayEdge = network.addEdge(source, target, true);
+			network.getRow(pathwayEdge).set(CyEdge.INTERACTION, "ContactPathway");
+		}
+		network.getRow(pathwayEdge).set("PathwayCount", count);
+		return pathwayEdge;
 	}
 
 	private List<Color> generateColors(int number) {

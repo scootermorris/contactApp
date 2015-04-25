@@ -18,6 +18,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.event.CyEventHelper;
 import org.cytoscape.command.CommandExecutorTaskFactory;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
@@ -33,15 +34,24 @@ import org.cytoscape.work.TaskObserver;
 import edu.ucsf.rbvi.contactApp.internal.ui.ContactPanel;
 
 public class ContactManager implements TaskObserver {
+	public static String BANDS = "Ball and Stick";
+	public static String SPHERE = "Spheres";
+
 	final CyServiceRegistrar serviceRegistrar;
 	CyNetworkFactory networkFactory = null;
 	CyNetworkManager networkManager = null;
 	SynchronousTaskManager taskManager = null;
+	CyEventHelper eventHelper = null;
 	CommandExecutorTaskFactory commandTaskFactory = null;
 	Map<Double, ContactNetwork> contactNetworkMap;
 	File contactFile = null;
 	ContactPanel contactPanel = null;
 	int modelNumber = -1;
+	String modelName = null;
+
+	// Settings
+	String displayType = BANDS;
+	boolean showPathway = true;
 
 	// A couple of useful services that we want to cache
 	CyApplicationManager cyAppManager = null;
@@ -49,6 +59,12 @@ public class ContactManager implements TaskObserver {
 	public ContactManager(CyServiceRegistrar registrar) {
 		this.serviceRegistrar = registrar;
 		contactNetworkMap = new HashMap<>();
+	}
+
+	public void reset() {
+		contactNetworkMap.clear();
+		contactFile = null;
+		contactPanel = null;
 	}
 
 	public ContactNetwork getContactNetwork(double stress) {
@@ -177,20 +193,23 @@ public class ContactManager implements TaskObserver {
 		residue = residue.substring(0, residue.length()-1);
 
 		Map<String, Object> args = new HashMap<>();
-		String command = "show "+residue+"; repr bs "+residue;
+		String repr = "bs";
+		if (displayType == SPHERE)
+			repr = "sphere";
+
+		// Show the side chain.  Note that we want to explicitly change the color since the 
+		// single color that came from cytoscape may be confusing.  Color byelement helps.
+		String command = "show "+residue+"; repr "+repr+" "+residue+"; color byelement "+residue;
 		// System.out.println("Sending command: '"+command+"'");
 		args.put("command", command);
 		TaskIterator ti = commandTaskFactory.createTaskIterator("structureViz", "send", args, null);
 		taskManager.execute(ti);
 
-		// args = new HashMap<>();
-		// args.put("command", "repr sphere sel");
-		// ti = commandTaskFactory.createTaskIterator("structureViz", "send", args, null);
-		// taskManager.execute(ti);
 	}
 
 	public void syncColors() {
 		getTaskServices();
+		eventHelper.flushPayloadEvents();
 		Map<String, Object> args = new HashMap<>();
 		args.put("chimeraToCytoscape", "false");
 		args.put("cytoscapeToChimera", "true");
@@ -198,9 +217,23 @@ public class ContactManager implements TaskObserver {
 		taskManager.execute(ti);
 	}
 
+	public void	closeChimeraStructure() {
+		// Shouldn't need to do this
+		getTaskServices();
+
+		Map<String, Object> args = new HashMap<>();
+		args.put("modelList", modelName);
+		TaskIterator ti = commandTaskFactory.createTaskIterator("structureViz", "close", args, null);
+		taskManager.execute(ti);
+		modelNumber = -1;
+		modelName = null;
+	}
+
 	public void taskFinished(ObservableTask task) {
 		String models = task.getResults(String.class);
-		String model = models.substring(1, models.indexOf(' '));
+		int offset = models.indexOf(' ');
+		String model = models.substring(1, offset);
+		modelName = new String(models.substring(offset+1, models.length()-1));
 
 		try {
 			modelNumber = Integer.parseInt(model);
@@ -220,6 +253,12 @@ public class ContactManager implements TaskObserver {
 				networkManager.addNetwork(net);
 		}
 	}
+
+	// Settings
+	public boolean getShowPathway() { return showPathway; }
+	public void setShowPathway(boolean p) { showPathway = p; }
+	public String getDisplayResidueType() { return displayType; }
+	public void setDisplayResidueType(String type) { displayType = type; }
 
 	public int getCurrentModel() {
 		return modelNumber;
@@ -261,6 +300,9 @@ public class ContactManager implements TaskObserver {
 		}
 		if (commandTaskFactory == null) {
 			commandTaskFactory = getService(CommandExecutorTaskFactory.class);
+		}
+		if (eventHelper == null) {
+			eventHelper = getService(CyEventHelper.class);
 		}
 	}
 

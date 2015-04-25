@@ -255,20 +255,6 @@ public class NetworkImageRenderer implements TableCellRenderer {
 			edgeMapping.addPoint(1, new BoundaryRangeValues(1, 1, 1));
 			edgeMapping.addPoint(10, new BoundaryRangeValues(20, 20, 20));
 			componentStyle.addVisualMappingFunction(edgeMapping);
-
-
-			/*
-			//System.out.println("GCS: before getVisual Lexicon");
-			VisualLexicon lexicon = applicationMgr.getCurrentRenderingEngine().getVisualLexicon();
-			VisualProperty vp = lexicon.lookup(CyEdge.class, "edgeTargetArrowShape");
-			//System.out.println("CCI: after setting visual property");
-
-			if (vp != null) {
-				Object arrowValue = vp.parseSerializableString("ARROW");
-				System.out.println("Edge target arrow value = "+arrowValue.toString());
-				if (arrowValue != null) componentStyle.setDefaultValue(vp, arrowValue);
-			}
-			*/
 		}
 
 		return componentStyle;

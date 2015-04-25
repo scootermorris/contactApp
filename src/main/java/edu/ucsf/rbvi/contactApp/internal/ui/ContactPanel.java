@@ -41,6 +41,8 @@ import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.CytoPanelState;
+import org.cytoscape.event.CyEventHelper;
+import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.view.model.CyNetworkView;
@@ -55,6 +57,7 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 	private final CyNetwork network;
 	private final CyNetworkView networkView;
 	private ContactNetworkBrowser contactNetworkBrowser;
+	private CyEventHelper eventHelper;
 
   // table size parameters
 	private static final int graphPicSize = 80;
@@ -75,6 +78,7 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 		contactNetworkBrowser = new ContactNetworkBrowser(this, contactManager);
 		add(contactNetworkBrowser, BorderLayout.CENTER);
 		this.setSize(this.getMinimumSize());
+		eventHelper = (CyEventHelper)contactManager.getService(CyEventHelper.class);
 
 	}
 
@@ -104,6 +108,11 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 	public void updateTable() {
 		if (contactNetworkBrowser != null)
 			contactNetworkBrowser.updateTable();
+	}
+
+	public void updateData() {
+		if (contactNetworkBrowser != null)
+			contactNetworkBrowser.updateData();
 	}
 
 	public class ContactNetworkBrowser extends JPanel implements ListSelectionListener, ChangeListener {
@@ -221,10 +230,17 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 			for (int viewRow: rows) {
 				int modelRow = table.convertRowIndexToModel(viewRow);
 				residues.addAll(tableModel.selectFromRow(modelRow));
+				tableModel.clearPathwayEdges();
+				if (contactManager.getShowPathway()) {
+					List<CyEdge> edges = tableModel.selectEdgesFromRow(modelRow);
+					eventHelper.flushPayloadEvents();
+					tableModel.styleEdges(edges, modelRow);
+				}
 			}
 			networkView.updateView();
-			if (residues.size() > 0)
+			if (residues.size() > 0) {
 				contactManager.showSideChain(residues);
+			}
 		}
 
 		public void stateChanged(ChangeEvent e) {
@@ -272,6 +288,10 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 			tableScrollPane.getViewport().revalidate();
 			table.doLayout();
 			((TableRowSorter)table.getRowSorter()).sort();
+		}
+
+		public void updateData() {
+			tableModel.updateData(tStress);
 		}
 
 		public Dictionary<Integer, JComponent> generateLabels(List<Double> stresses) {

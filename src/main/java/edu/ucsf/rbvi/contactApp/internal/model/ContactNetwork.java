@@ -72,7 +72,7 @@ public class ContactNetwork {
 		Map<Integer, CyNode> nodeMap = new HashMap<Integer, CyNode>();
 		Map<CyEdge, Integer> edgeMap = new HashMap<CyEdge, Integer>();
 		network = networkFactory.createNetwork(SavePolicy.DO_NOT_SAVE);
-		network.getTable(CyEdge.class, CyNetwork.DEFAULT_ATTRS).createColumn("Count", Integer.class, false);
+		network.getTable(CyEdge.class, CyNetwork.DEFAULT_ATTRS).createColumn("PathwayCount", Integer.class, false);
 		network.getTable(CyNode.class, CyNetwork.DEFAULT_ATTRS).createColumn("ResidueNumber", Integer.class, false);
 		network.getRow(network).set("Name", "Tstress: "+stress);
 
@@ -109,7 +109,7 @@ public class ContactNetwork {
 
 		for (CyEdge edge: edgeMap.keySet()) {
 			// Finally, update the count column
-			network.getRow(edge).set("Count", edgeMap.get(edge));
+			network.getRow(edge).set("PathwayCount", edgeMap.get(edge));
 		}
 	}
 

@@ -5,6 +5,7 @@ import static org.cytoscape.work.ServiceProperties.COMMAND;
 import static org.cytoscape.work.ServiceProperties.COMMAND_DESCRIPTION;
 import static org.cytoscape.work.ServiceProperties.COMMAND_NAMESPACE;
 import static org.cytoscape.work.ServiceProperties.IN_MENU_BAR;
+import static org.cytoscape.work.ServiceProperties.INSERT_SEPARATOR_BEFORE;
 import static org.cytoscape.work.ServiceProperties.MENU_GRAVITY;
 import static org.cytoscape.work.ServiceProperties.PREFERRED_MENU;
 import static org.cytoscape.work.ServiceProperties.TITLE;
@@ -26,8 +27,10 @@ import org.slf4j.LoggerFactory;
 
 import edu.ucsf.rbvi.contactApp.internal.model.ContactManager;
 import edu.ucsf.rbvi.contactApp.internal.tasks.LoadContactNetworkTaskFactory;
+import edu.ucsf.rbvi.contactApp.internal.tasks.ContactSettingsTaskFactory;
 import edu.ucsf.rbvi.contactApp.internal.tasks.CreateContactNetworksTaskFactory;
 import edu.ucsf.rbvi.contactApp.internal.tasks.ShowContactNetworksPanelTaskFactory;
+import edu.ucsf.rbvi.contactApp.internal.tasks.UpdateLayoutTaskFactory;
 
 
 public class CyActivator extends AbstractCyActivator {
@@ -92,8 +95,29 @@ public class CyActivator extends AbstractCyActivator {
 			Properties createProps = new Properties();
 			createProps.setProperty(PREFERRED_MENU, "Apps.contactApp");
 			createProps.setProperty(TITLE, "Create contact network");
-			createProps.setProperty(MENU_GRAVITY, "10.0");
+			createProps.setProperty(MENU_GRAVITY, "4.0");
 			registerService(bc, createNetworks, TaskFactory.class, createProps);
+		}
+
+		{
+			UpdateLayoutTaskFactory updateLayout = 
+				new UpdateLayoutTaskFactory(contactManager);
+			Properties updateLayoutProps = new Properties();
+			updateLayoutProps.setProperty(PREFERRED_MENU, "Apps.contactApp");
+			updateLayoutProps.setProperty(TITLE, "Update RIN layout");
+			updateLayoutProps.setProperty(MENU_GRAVITY, "5.0");
+			registerService(bc, updateLayout, NetworkTaskFactory.class, updateLayoutProps);
+		}
+
+		{
+			ContactSettingsTaskFactory settings = 
+				new ContactSettingsTaskFactory(contactManager);
+			Properties settingsProps = new Properties();
+			settingsProps.setProperty(PREFERRED_MENU, "Apps.contactApp");
+			settingsProps.setProperty(TITLE, "Settings");
+			settingsProps.setProperty(INSERT_SEPARATOR_BEFORE, "true");
+			settingsProps.setProperty(MENU_GRAVITY, "10.0");
+			registerService(bc, settings, TaskFactory.class, settingsProps);
 		}
 
 		} catch (Exception e) {
