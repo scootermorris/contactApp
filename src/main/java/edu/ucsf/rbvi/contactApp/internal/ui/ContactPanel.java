@@ -186,6 +186,8 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 
 			TableRowSorter rowSorter = new TableRowSorter(tableModel);
 			rowSorter.setComparator(0, new NetworkSorter());
+			// Don't let the user sort
+			rowSorter.setSortable(0, false);
 			rowSorter.setSortable(1, false);
 			table.setRowSorter(rowSorter);
 

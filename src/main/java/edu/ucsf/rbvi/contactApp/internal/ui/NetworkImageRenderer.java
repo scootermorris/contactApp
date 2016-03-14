@@ -79,8 +79,11 @@ public class NetworkImageRenderer implements TableCellRenderer {
 	                                               boolean isSelected, boolean hasFocus,
 																								 int viewRow, int viewColumn) {
 		ContactBrowserTableModel tableModel = (ContactBrowserTableModel)table.getModel();
-		CyNetwork net = (CyNetwork)network;
-		// System.out.println("Rendering network for row "+viewRow);
+		CyNetwork net;
+		if (network == null)
+			net = (CyNetwork)table.getValueAt(viewRow, viewColumn);
+		else
+			net = (CyNetwork)network;
 
 		if (!imageMap.containsKey(net)) {
 			// System.out.println("Redrawing image for row "+viewRow);

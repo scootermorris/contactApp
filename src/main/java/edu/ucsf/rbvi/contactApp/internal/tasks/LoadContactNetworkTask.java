@@ -78,10 +78,13 @@ public class LoadContactNetworkTask extends AbstractTask {
 		TaskIterator ti = new TaskIterator(new ShowContactNetworksPanelTask(contactManager, false));
 		tm.execute(ti);
 
-		// Show the results panel
-		ti = new TaskIterator(new ShowContactNetworksPanelTask(contactManager, true));
-		tm.execute(ti);
+		// If we have a network view (why don't we *always* have a network view?), show the networks panel
+		if (contactManager.getCurrentNetworkView() != null) {
+			// Show the results panel
+			ti = new TaskIterator(new ShowContactNetworksPanelTask(contactManager, true));
+			tm.execute(ti);
 
-		contactManager.getResultsPanel().updateData();
+			contactManager.getResultsPanel().updateData();
+		}
 	}
 }

@@ -83,12 +83,13 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 			// Default grey
 			Color color = new Color(192,192,192,128);
 			CyNetwork componentNetwork = componentNetworks.get(i);
+			System.out.println("Network component "+i+" is "+componentNetwork.getSUID());
 			if (componentNetwork.getNodeCount() > 2)
 				color = componentColors.get(i);
 
-			setValueAt(componentNetwork, i, 0);
+			data[i][0] = componentNetwork;
 
-			setValueAt(color, i, 1);
+			data[i][1] = color;
 
 			colorRIN(componentNetwork, networkView, color);
 		}

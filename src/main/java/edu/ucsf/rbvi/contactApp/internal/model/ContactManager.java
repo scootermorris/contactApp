@@ -25,6 +25,7 @@ import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.FinishStatus;
 import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.SynchronousTaskManager;
@@ -40,6 +41,7 @@ public class ContactManager implements TaskObserver {
 	final CyServiceRegistrar serviceRegistrar;
 	CyNetworkFactory networkFactory = null;
 	CyNetworkManager networkManager = null;
+	CyNetworkViewManager networkViewManager = null;
 	SynchronousTaskManager taskManager = null;
 	CyEventHelper eventHelper = null;
 	CommandExecutorTaskFactory commandTaskFactory = null;
@@ -172,6 +174,17 @@ public class ContactManager implements TaskObserver {
 		args = new HashMap<>();
 		ti = commandTaskFactory.createTaskIterator("structureViz", "createRIN", args, null);
 		taskManager.execute(ti);
+
+		if (networkViewManager == null)
+			networkViewManager = getService(CyNetworkViewManager.class);
+
+		CyNetwork network = getCurrentNetwork();
+		if (networkViewManager.viewExists(network) && getCurrentNetworkView() == null) {
+			for (CyNetworkView view: networkViewManager.getNetworkViews(network)) {
+				cyAppManager.setCurrentNetworkView(view);
+				break;
+			}
+		}
 	}
 
 	public void hideSideChain() {
