@@ -69,7 +69,7 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 	public void updateData(double tStress) {
 		// First, reset all of the RIN nodes to grey
 		for (View<CyNode> nv: networkView.getNodeViews())
-			nv.setVisualProperty(NODE_FILL_COLOR, Color.GRAY);
+			nv.setLockedValue(NODE_FILL_COLOR, Color.GRAY);
 
 		// Now handle all of our component networks
 		ContactNetwork contactNetwork = contactManager.getContactNetwork(tStress);
@@ -83,7 +83,7 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 			// Default grey
 			Color color = new Color(192,192,192,128);
 			CyNetwork componentNetwork = componentNetworks.get(i);
-			System.out.println("Network component "+i+" is "+componentNetwork.getSUID());
+			// System.out.println("Network component "+i+" is "+componentNetwork.getSUID());
 			if (componentNetwork.getNodeCount() > 2)
 				color = componentColors.get(i);
 
@@ -122,8 +122,8 @@ public class ContactBrowserTableModel extends DefaultTableModel {
 			if (residueMap.containsKey(resId)) {
 				CyNode targetNode = residueMap.get(resId);
 				View<CyNode> nv = RINNetworkView.getNodeView(targetNode);
-				// nv.setLockedValue(NODE_PAINT, color);
-				nv.setVisualProperty(NODE_FILL_COLOR, color);
+				nv.clearValueLock(NODE_FILL_COLOR);
+				nv.setLockedValue(NODE_FILL_COLOR, color);
 			}
 		}
 	}

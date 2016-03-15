@@ -45,6 +45,9 @@ public class ShowContactNetworksPanelTask extends AbstractTask {
 		CytoPanel cytoPanel = swingApplication.getCytoPanel(CytoPanelName.EAST);
 		if (showHide) {
 			monitor.setTitle("Showing contact network panel");
+			// If we don't have a network view, yet.  Just bail.
+			if (contactManager.getCurrentNetworkView() == null)
+				return;
 			ContactPanel contactPanel = new ContactPanel(contactManager, null);
 			contactManager.registerService(contactPanel, CytoPanelComponent.class, new Properties());
 			contactManager.setResultsPanel(contactPanel);
