@@ -149,7 +149,7 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 			// stress value
 			if (minStress < maxStress) {
 				JPanel sliderPanel = new JPanel(new BorderLayout());
-				JLabel sliderLabel = new JLabel("<html><b>&nbsp;&nbsp;T<sub>stress</sub></b>&nbsp;&nbsp;</html>");
+				JLabel sliderLabel = new JLabel("<html><b style=\"font-size: 8px;\">&nbsp;&nbsp;T<sub>stress</sub></b>&nbsp;&nbsp;</html>");
 				sliderPanel.add(sliderLabel, BorderLayout.WEST);
 
 				slider = new JSlider(minStress, maxStress, (int)(tStress*100.0));
@@ -169,8 +169,8 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 			// Create a new JPanel for the table
 			JPanel tablePanel = new JPanel(new BorderLayout());
 			String stressLabel = formatter.format(tStress);
-			tableLabel = new JLabel("<html><h3>&nbsp;&nbsp;Connected Components for T<sub>stress</sub>="+
-											        stressLabel+"</h3></html>");
+			tableLabel = new JLabel("<html><b style=\"font-size: 10px;\">&nbsp;&nbsp;Connected Components for T<sub>stress</sub>="+
+											        stressLabel+"</b></html>");
 			tablePanel.add(tableLabel, BorderLayout.NORTH);
 
 			tableModel = new ContactBrowserTableModel(contactManager, contactManager.getCurrentNetworkView(), 
