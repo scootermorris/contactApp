@@ -53,7 +53,8 @@ public class LoadContactNetworkTask extends AbstractTask {
 				contactManager.unregisterService(contactPanel, CytoPanelComponent.class);
 
 			// Delete the network
-			contactManager.getService(CyNetworkManager.class).destroyNetwork(contactManager.getCurrentNetwork());
+			if (contactManager.getCurrentNetwork() != null)
+				contactManager.getService(CyNetworkManager.class).destroyNetwork(contactManager.getCurrentNetwork());
 			
 			// Clear the manager
 			contactManager.reset();
