@@ -74,7 +74,7 @@ public class ContactNetwork {
 		network = networkFactory.createNetwork(SavePolicy.DO_NOT_SAVE);
 		network.getTable(CyEdge.class, CyNetwork.DEFAULT_ATTRS).createColumn("PathwayCount", Integer.class, false);
 		network.getTable(CyNode.class, CyNetwork.DEFAULT_ATTRS).createColumn("ResidueNumber", Integer.class, false);
-		network.getRow(network).set("Name", "Tstress: "+stress);
+		network.getRow(network).set(CyNetwork.NAME, "Tstress: "+stress);
 
 		for (Pathway pathway: pathways) {
 			int lastResidue = -1;
@@ -85,7 +85,8 @@ public class ContactNetwork {
 
 				// While we're here, name the node
 				CyNode target = nodeMap.get(residue);
-				network.getRow(target).set("Name", residue.toString());
+				System.out.println("Setting name for node "+target+" to "+residue.toString());
+				network.getRow(target).set(CyNetwork.NAME, residue.toString());
 				network.getRow(target).set("ResidueNumber", residue);
 
 				if (lastResidue < 0) {
@@ -101,7 +102,7 @@ public class ContactNetwork {
 					edgeMap.put(edge, edgeMap.get(edge)+1);
 				} else {
 					edge = network.addEdge(source, target, false);
-					network.getRow(edge).set("Name", Integer.toString(lastResidue)+"-"+residue.toString());
+					network.getRow(edge).set(CyNetwork.NAME, Integer.toString(lastResidue)+"-"+residue.toString());
 					edgeMap.put(edge, 1);
 				}
 			}

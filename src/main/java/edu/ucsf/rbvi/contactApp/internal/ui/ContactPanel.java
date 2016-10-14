@@ -246,7 +246,7 @@ public class ContactPanel extends JPanel implements CytoPanelComponent {
 		}
 
 		public void stateChanged(ChangeEvent e) {
-			if (e.getSource() != slider) return;
+			if (e.getSource() != slider || slider.getValueIsAdjusting()) return;
 			int stress = slider.getValue();
 			double dStress = ((double)stress)/100.0;
 			for (int i = 0; i < stresses.size(); i++) {

@@ -139,6 +139,7 @@ public class NetworkImageRenderer implements TableCellRenderer {
 		componentView.setVisualProperty(NETWORK_WIDTH, new Double(width));
 		componentView.setVisualProperty(NETWORK_HEIGHT, new Double(height));
 
+
 		for (View<CyNode> nv : componentView.getNodeViews()) {
 			// Node position
 			final double x;
@@ -170,14 +171,19 @@ public class NetworkImageRenderer implements TableCellRenderer {
 		}
 
 		if (layoutNecessary) {
-			if (layouter == null) {
-				layouter = new SpringEmbeddedLayouter();
+			final CyNetworkView rinView = contactManager.getRINView();
+			if (rinView == null) {
+				if (layouter == null) {
+					layouter = new SpringEmbeddedLayouter();
+				}
+
+				layouter.setGraphView(componentView);
+
+				// The doLayout method should return true if the process completes without interruption
+				layouter.doLayout(weightLayout, goalTotal, progress);
+			} else {
+				copyLayout(componentView, rinView);
 			}
-
-			layouter.setGraphView(componentView);
-
-			// The doLayout method should return true if the process completes without interruption
-			layouter.doLayout(weightLayout, goalTotal, progress);
 		}
 
 		final Image image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -273,5 +279,29 @@ public class NetworkImageRenderer implements TableCellRenderer {
 
 		return view;
 	}
+
+	private void copyLayout(CyNetworkView componentView, CyNetworkView rinView) {
+		Map<Integer, View<CyNode>> nameViewMap = new HashMap<>();
+		CyNetwork compNetwork = componentView.getModel();
+		CyNetwork rinNetwork = rinView.getModel();
+		for (View<CyNode> nv: componentView.getNodeViews()) {
+			CyNode node = nv.getModel();
+			Integer name = compNetwork.getRow(node).get("ResidueNumber", Integer.class);
+			nameViewMap.put(name, nv);
+		}
+
+		for (View<CyNode> nv: rinView.getNodeViews()) {
+			CyNode node = nv.getModel();
+			Integer residue = rinNetwork.getRow(node).get("ResIndex", Integer.class);
+			if (nameViewMap.containsKey(residue)) {
+				View<CyNode> toView = nameViewMap.get(residue);
+				double x = nv.getVisualProperty(NODE_X_LOCATION);
+				double y = nv.getVisualProperty(NODE_Y_LOCATION);
+				toView.setVisualProperty(NODE_X_LOCATION,x);
+				toView.setVisualProperty(NODE_Y_LOCATION,y);
+			}
+		}
+	}
+
 }
 
