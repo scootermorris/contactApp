@@ -50,6 +50,7 @@ public class ContactManager implements TaskObserver {
 	ContactPanel contactPanel = null;
 	int modelNumber = -1;
 	String modelName = null;
+	CyNetworkView rinView = null;
 
 	// Settings
 	String displayType = BANDS;
@@ -116,7 +117,7 @@ public class ContactManager implements TaskObserver {
 					continue;
 
 				double tstress = Double.parseDouble(((String)stress).substring(7));
-				ContactNetwork cn = new ContactNetwork(networkFactory ,tstress);
+				ContactNetwork cn = new ContactNetwork(networkFactory, tstress);
 				contactNetworkMap.put(tstress, cn);
 
 				JSONObject pathways = (JSONObject)jsonObject.get(stress);
@@ -182,8 +183,11 @@ public class ContactManager implements TaskObserver {
 		if (networkViewManager.viewExists(network) && getCurrentNetworkView() == null) {
 			for (CyNetworkView view: networkViewManager.getNetworkViews(network)) {
 				cyAppManager.setCurrentNetworkView(view);
+				rinView = view;
 				break;
 			}
+		} else if (getCurrentNetworkView() != null) {
+			rinView = getCurrentNetworkView();
 		}
 	}
 
@@ -191,11 +195,12 @@ public class ContactManager implements TaskObserver {
 		getTaskServices();
 
 		Map<String, Object> args = new HashMap<>();
-		args.put("command", "~show sel");
+		args.put("command", "hide sel");
 		TaskIterator ti = commandTaskFactory.createTaskIterator("structureViz", "send", args, null);
 		taskManager.execute(ti);
 	}
 
+	/*
 	public void showSideChain(List<Integer> residues) {
 		getTaskServices();
 
@@ -213,6 +218,31 @@ public class ContactManager implements TaskObserver {
 		// Show the side chain.  Note that we want to explicitly change the color since the 
 		// single color that came from cytoscape may be confusing.  Color byelement helps.
 		String command = "show "+residue+"; repr "+repr+" "+residue+"; color byelement "+residue;
+		// System.out.println("Sending command: '"+command+"'");
+		args.put("command", command);
+		TaskIterator ti = commandTaskFactory.createTaskIterator("structureViz", "send", args, null);
+		taskManager.execute(ti);
+
+	}
+	*/
+	
+	public void showSideChain(List<Integer> residues) {
+		getTaskServices();
+
+		String residue = "#"+modelNumber+":";
+		for (Integer residueID: residues)
+			residue += ""+residueID+",";
+
+		residue = residue.substring(0, residue.length()-1);
+
+		Map<String, Object> args = new HashMap<>();
+		String repr = "ball";
+		if (displayType == SPHERE)
+			repr = "sphere";
+
+		// Show the side chain.  Note that we want to explicitly change the color since the 
+		// single color that came from cytoscape may be confusing.  Color byelement helps.
+		String command = "show "+residue+"; style "+residue+" "+repr+"; color "+residue+" byelement atoms";
 		// System.out.println("Sending command: '"+command+"'");
 		args.put("command", command);
 		TaskIterator ti = commandTaskFactory.createTaskIterator("structureViz", "send", args, null);
@@ -272,6 +302,8 @@ public class ContactManager implements TaskObserver {
 	public void setShowPathway(boolean p) { showPathway = p; }
 	public String getDisplayResidueType() { return displayType; }
 	public void setDisplayResidueType(String type) { displayType = type; }
+
+	public CyNetworkView getRINView() { return rinView; }
 
 	public int getCurrentModel() {
 		return modelNumber;
